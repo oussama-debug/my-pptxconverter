@@ -23,8 +23,9 @@ import (
 )
 
 func convert() *cobra.Command {
-	convertModelQuestions := []string{
-		"Enter the path to the pptx file",
+	convertModelQuestions := []prompts.Question{
+		*prompts.NewQuestion("Enter the path to the pptx file", prompts.QuestionString, []string{}),
+		*prompts.NewQuestion("Choose the output format", prompts.QuestionChoice, []string{"html", "pdf"}),
 	}
 	convertPromptModel := prompts.NewConvertPromptModel(convertModelQuestions)
 
