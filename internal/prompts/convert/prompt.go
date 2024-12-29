@@ -14,7 +14,7 @@
  limitations under the License.
 */
 
-package prompts
+package convert
 
 import (
 	"fmt"
@@ -23,12 +23,14 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	models "github.com/oussama-debug/pptx/internal/prompts/models"
 )
 
 type ConvertPromptModel struct {
 	spinner     spinner.Model
 	quitting    bool
-	questions   []Question
+	questions   []models.Question
+	answers     map[int]string
 	answerField textinput.Model
 	index       int
 	width       int
@@ -36,6 +38,7 @@ type ConvertPromptModel struct {
 	cursor      int
 	styles      *ConvertPromptModelStyles
 	err         error
+	complete    bool
 }
 
 type ConvertPromptModelStyles struct {
@@ -43,18 +46,25 @@ type ConvertPromptModelStyles struct {
 	InputField  lipgloss.Style
 }
 
+var (
+	arrowStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6"))
+	inputStyle   = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#01FAC6")).Width(80)
+	spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6"))
+	borderStyle  = lipgloss.Color("#01FAC6")
+)
+
 func DefaultStyles() *ConvertPromptModelStyles {
 	s := new(ConvertPromptModelStyles)
-	s.BorderColor = lipgloss.Color("#01FAC6")
-	s.InputField = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#01FAC6")).Width(80)
+	s.BorderColor = borderStyle
+	s.InputField = inputStyle
 
 	return s
 }
 
-func NewConvertPromptModel(questions []Question) *ConvertPromptModel {
+func NewConvertPromptModel(questions []models.Question) *ConvertPromptModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6"))
+	s.Style = spinnerStyle
 
 	answerField := textinput.New()
 	answerField.Placeholder = "Type your powerpoint file here"
@@ -67,7 +77,13 @@ func NewConvertPromptModel(questions []Question) *ConvertPromptModel {
 		spinner:     s,
 		answerField: answerField,
 		styles:      styles,
+		complete:    false,
+		answers:     make(map[int]string),
 	}
+}
+
+func (c ConvertPromptModel) GetQuestions() []models.Question {
+	return c.questions
 }
 
 func (c ConvertPromptModel) Init() tea.Cmd {
@@ -76,64 +92,15 @@ func (c ConvertPromptModel) Init() tea.Cmd {
 
 func (c *ConvertPromptModel) Next() {
 	if c.index < len(c.questions)-1 {
+		if c.questions[c.index].GetGenre() == models.QuestionChoice {
+			c.answers[c.index] = c.questions[c.index].GetChoices()[c.cursor]
+		} else {
+			c.answers[c.index] = c.answerField.Value()
+		}
 		c.index++
 	} else {
-		c.index = 0
+		c.complete = true
 	}
-}
-func (c ConvertPromptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	current := &c.questions[c.index]
-
-	switch msg := msg.(type) {
-
-	case tea.WindowSizeMsg:
-		c.width = msg.Width
-		c.height = msg.Height
-		c.quitting = false
-		return c, nil
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
-			c.quitting = true
-			return c, tea.Quit
-		case "enter":
-			if c.questions[c.index].genre == QuestionChoice {
-				current.answer = c.questions[c.index].choices[c.cursor]
-				c.Next()
-			} else {
-				current.answer = c.answerField.Value()
-				c.answerField.SetValue("")
-				c.Next()
-			}
-			return c, nil
-		case "up":
-			if c.questions[c.index].genre == QuestionChoice {
-				c.cursor--
-				if c.cursor < 0 {
-					c.cursor = len(c.questions[c.index].choices) - 1
-				}
-			}
-			return c, nil
-		case "down":
-			if c.questions[c.index].genre == QuestionChoice {
-				c.cursor++
-				if c.cursor >= len(c.questions[c.index].choices) {
-					c.cursor = 0
-				}
-			}
-			return c, nil
-		default:
-			var cmd tea.Cmd
-			c.answerField, cmd = c.answerField.Update(msg)
-			c.quitting = false
-			return c, cmd
-		}
-	default:
-		var cmd tea.Cmd
-		c.spinner, cmd = c.spinner.Update(msg)
-		return c, cmd
-	}
-
 }
 
 func (c ConvertPromptModel) View() string {
@@ -148,11 +115,11 @@ func (c ConvertPromptModel) View() string {
 		return str
 	}
 
-	if c.questions[c.index].genre == QuestionChoice {
-		str = fmt.Sprintf("%s\n", c.questions[c.index].question)
-		for i, choice := range c.questions[c.index].choices {
+	if c.questions[c.index].GetGenre() == models.QuestionChoice {
+		str = fmt.Sprintf("%s\n", c.questions[c.index].GetQuestion())
+		for i, choice := range c.questions[c.index].GetChoices() {
 			if i == c.cursor {
-				str += fmt.Sprintf("  %s %s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Render("➜"), choice)
+				str += fmt.Sprintf("  %s %s\n", arrowStyle.Render("➜"), choice)
 			} else {
 				str += fmt.Sprintf("    %s\n", choice)
 			}
@@ -164,7 +131,7 @@ func (c ConvertPromptModel) View() string {
 			c.height,
 			lipgloss.Left,
 			lipgloss.Left,
-			lipgloss.JoinVertical(lipgloss.Left, c.questions[c.index].question, c.styles.InputField.Render(c.answerField.View())),
+			lipgloss.JoinVertical(lipgloss.Left, c.questions[c.index].GetQuestion(), c.styles.InputField.Render(c.answerField.View())),
 		)
 	}
 
