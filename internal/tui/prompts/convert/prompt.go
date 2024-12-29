@@ -23,13 +23,13 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	prompt "github.com/oussama-debug/pptx/internal/tui/prompts"
+	models "github.com/oussama-debug/pptx/internal/tui/prompts/models"
 )
 
 type ConvertPromptModel struct {
 	spinner     spinner.Model
 	quitting    bool
-	questions   []prompt.Question
+	questions   []models.Question
 	answerField textinput.Model
 	index       int
 	width       int
@@ -37,11 +37,6 @@ type ConvertPromptModel struct {
 	cursor      int
 	styles      *ConvertPromptModelStyles
 	err         error
-}
-
-// Update implements tea.Model.
-func (c ConvertPromptModel) Update(tea.Msg) (tea.Model, tea.Cmd) {
-	panic("unimplemented")
 }
 
 type ConvertPromptModelStyles struct {
@@ -64,7 +59,7 @@ func DefaultStyles() *ConvertPromptModelStyles {
 	return s
 }
 
-func NewConvertPromptModel(questions []prompt.Question) *ConvertPromptModel {
+func NewConvertPromptModel(questions []models.Question) *ConvertPromptModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = spinnerStyle
@@ -107,7 +102,7 @@ func (c ConvertPromptModel) View() string {
 		return str
 	}
 
-	if c.questions[c.index].GetGenre() == prompt.QuestionChoice {
+	if c.questions[c.index].GetGenre() == models.QuestionChoice {
 		str = fmt.Sprintf("%s\n", c.questions[c.index].GetQuestion())
 		for i, choice := range c.questions[c.index].GetChoices() {
 			if i == c.cursor {

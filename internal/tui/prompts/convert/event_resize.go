@@ -20,13 +20,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func (c ConvertPromptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		return c.OnUpdateWindowSize(msg)
-	case tea.KeyMsg:
-		return c.OnUpdateKeyMsg(msg)
-	default:
-		return c.OnUpdateDefault(msg)
-	}
+func (c ConvertPromptModel) OnUpdateWindowSize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
+	c.width = msg.Width
+	c.height = msg.Height
+	c.quitting = false
+	return c, nil
 }

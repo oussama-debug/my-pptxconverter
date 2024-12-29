@@ -18,15 +18,15 @@ package cmd
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	prompt "github.com/oussama-debug/pptx/internal/tui/prompts"
 	convert_prompt "github.com/oussama-debug/pptx/internal/tui/prompts/convert"
+	models "github.com/oussama-debug/pptx/internal/tui/prompts/models"
 	"github.com/spf13/cobra"
 )
 
 func convert() *cobra.Command {
-	convertModelQuestions := []prompt.Question{
-		*prompt.NewQuestion("Enter the path to the pptx file", prompt.QuestionString, []string{}),
-		*prompt.NewQuestion("Choose the output format", prompt.QuestionChoice, []string{"html", "pdf"}),
+	convertModelQuestions := []models.Question{
+		*models.NewQuestion("Enter the path to the pptx file", models.QuestionString, []string{}),
+		*models.NewQuestion("Choose the output format", models.QuestionChoice, []string{"html", "pdf"}),
 	}
 	convertPromptModel := convert_prompt.NewConvertPromptModel(convertModelQuestions)
 

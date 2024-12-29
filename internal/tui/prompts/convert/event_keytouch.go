@@ -18,20 +18,19 @@ package convert
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	prompt "github.com/oussama-debug/pptx/internal/tui/prompts"
-	convert_prompt "github.com/oussama-debug/pptx/internal/tui/prompts/convert"
+	models "github.com/oussama-debug/pptx/internal/tui/prompts/models"
 )
 
-func (c convert_prompt.ConvertPromptModel) OnUpdateKeyMsg(msg *tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (c ConvertPromptModel) OnUpdateKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	current := &c.questions[c.index]
 	var cmd tea.Cmd
 
-	switch (*msg).String() {
+	switch msg.String() {
 	case "q", "esc", "ctrl+c":
 		c.quitting = true
 		return c, tea.Quit
 	case "enter":
-		if c.questions[c.index].GetGenre() == prompt.QuestionChoice {
+		if c.questions[c.index].GetGenre() == models.QuestionChoice {
 			current.SetAnswer(c.questions[c.index].GetChoices()[c.cursor])
 			c.Next()
 		} else {
@@ -41,7 +40,7 @@ func (c convert_prompt.ConvertPromptModel) OnUpdateKeyMsg(msg *tea.KeyMsg) (tea.
 		}
 		return c, nil
 	case "up":
-		if c.questions[c.index].GetGenre() == prompt.QuestionChoice {
+		if c.questions[c.index].GetGenre() == models.QuestionChoice {
 			c.cursor--
 			if c.cursor < 0 {
 				c.cursor = len(c.questions[c.index].GetChoices()) - 1
@@ -49,7 +48,7 @@ func (c convert_prompt.ConvertPromptModel) OnUpdateKeyMsg(msg *tea.KeyMsg) (tea.
 		}
 		return c, nil
 	case "down":
-		if c.questions[c.index].GetGenre() == prompt.QuestionChoice {
+		if c.questions[c.index].GetGenre() == models.QuestionChoice {
 			c.cursor++
 			if c.cursor >= len(c.questions[c.index].GetChoices()) {
 				c.cursor = 0

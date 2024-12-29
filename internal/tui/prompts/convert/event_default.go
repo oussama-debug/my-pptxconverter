@@ -18,11 +18,10 @@ package convert
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	convert_prompt "github.com/oussama-debug/pptx/internal/tui/prompts/convert"
 )
 
-func (c convert_prompt.ConvertPromptModel) OnUpdateDefault(msg *tea.Msg) (tea.Model, tea.Cmd) {
+func (c ConvertPromptModel) OnUpdateDefault(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	c.spinner, cmd = c.spinner.Update(*msg)
+	c.spinner, cmd = c.spinner.Update(msg)
 	return c, cmd
 }
