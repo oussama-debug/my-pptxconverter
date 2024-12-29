@@ -14,7 +14,7 @@
  limitations under the License.
 */
 
-package prompts
+package models
 
 type QuestionGenre int
 

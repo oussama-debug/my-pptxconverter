@@ -17,11 +17,13 @@
 package cmd
 
 import (
-	"fmt"
+	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/oussama-debug/pptx/internal/logger"
+	archive "github.com/oussama-debug/pptx/internal/presentation"
 	convert_prompt "github.com/oussama-debug/pptx/internal/prompts/convert"
-	models "github.com/oussama-debug/pptx/internal/prompts/models"
+	"github.com/oussama-debug/pptx/internal/prompts/models"
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +33,7 @@ func convert() *cobra.Command {
 		*models.NewQuestion("Choose the output format", models.QuestionChoice, []string{"html", "pdf"}),
 	}
 	convertPromptModel := convert_prompt.NewConvertPromptModel(convertModelQuestions)
+	logger := logger.Get()
 
 	init := &cobra.Command{
 		Use:     "convert",
@@ -44,19 +47,24 @@ func convert() *cobra.Command {
 				return tea.ErrProgramKilled
 			}
 			questions := convertPromptModel.GetQuestions()
-			var pptxfile, output string
+			var pptxfile string
+			// var output string
 
 			for _, v := range questions {
 				if v.GetGenre() == models.QuestionString {
 					pptxfile = v.GetAnswer()
 				} else {
-					output = v.GetAnswer()
+					//output = v.GetAnswer()
 				}
 			}
 
-			// Print the results (or use them as needed)
-			fmt.Printf("PPTX Path: %s\n", pptxfile)
-			fmt.Printf("Output Format: %s\n", output)
+			doc, err := archive.NewPPTXDocument(pptxfile)
+			if err != nil {
+				logger.Error().Msgf("Error while processing the PPTXDocument: %v", err)
+				os.Exit(1)
+			}
+
+			doc.String()
 			return nil
 		},
 	}
