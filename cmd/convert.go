@@ -17,9 +17,11 @@
 package cmd
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
-	convert_prompt "github.com/oussama-debug/pptx/internal/tui/prompts/convert"
-	models "github.com/oussama-debug/pptx/internal/tui/prompts/models"
+	convert_prompt "github.com/oussama-debug/pptx/internal/prompts/convert"
+	models "github.com/oussama-debug/pptx/internal/prompts/models"
 	"github.com/spf13/cobra"
 )
 
@@ -41,6 +43,20 @@ func convert() *cobra.Command {
 			if _, err := p.Run(); err != nil {
 				return tea.ErrProgramKilled
 			}
+			questions := convertPromptModel.GetQuestions()
+			var pptxfile, output string
+
+			for _, v := range questions {
+				if v.GetGenre() == models.QuestionString {
+					pptxfile = v.GetAnswer()
+				} else {
+					output = v.GetAnswer()
+				}
+			}
+
+			// Print the results (or use them as needed)
+			fmt.Printf("PPTX Path: %s\n", pptxfile)
+			fmt.Printf("Output Format: %s\n", output)
 			return nil
 		},
 	}

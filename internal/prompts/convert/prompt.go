@@ -23,13 +23,14 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	models "github.com/oussama-debug/pptx/internal/tui/prompts/models"
+	models "github.com/oussama-debug/pptx/internal/prompts/models"
 )
 
 type ConvertPromptModel struct {
 	spinner     spinner.Model
 	quitting    bool
 	questions   []models.Question
+	answers     map[int]string
 	answerField textinput.Model
 	index       int
 	width       int
@@ -37,6 +38,7 @@ type ConvertPromptModel struct {
 	cursor      int
 	styles      *ConvertPromptModelStyles
 	err         error
+	complete    bool
 }
 
 type ConvertPromptModelStyles struct {
@@ -75,7 +77,13 @@ func NewConvertPromptModel(questions []models.Question) *ConvertPromptModel {
 		spinner:     s,
 		answerField: answerField,
 		styles:      styles,
+		complete:    false,
+		answers:     make(map[int]string),
 	}
+}
+
+func (c ConvertPromptModel) GetQuestions() []models.Question {
+	return c.questions
 }
 
 func (c ConvertPromptModel) Init() tea.Cmd {
@@ -84,9 +92,14 @@ func (c ConvertPromptModel) Init() tea.Cmd {
 
 func (c *ConvertPromptModel) Next() {
 	if c.index < len(c.questions)-1 {
+		if c.questions[c.index].GetGenre() == models.QuestionChoice {
+			c.answers[c.index] = c.questions[c.index].GetChoices()[c.cursor]
+		} else {
+			c.answers[c.index] = c.answerField.Value()
+		}
 		c.index++
 	} else {
-		c.index = 0
+		c.complete = true
 	}
 }
 
