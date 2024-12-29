@@ -14,7 +14,7 @@
  limitations under the License.
 */
 
-package prompts
+package convert
 
 import (
 	"fmt"
@@ -23,12 +23,13 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	prompt "github.com/oussama-debug/pptx/internal/tui/prompts"
 )
 
 type ConvertPromptModel struct {
 	spinner     spinner.Model
 	quitting    bool
-	questions   []Question
+	questions   []prompt.Question
 	answerField textinput.Model
 	index       int
 	width       int
@@ -36,6 +37,11 @@ type ConvertPromptModel struct {
 	cursor      int
 	styles      *ConvertPromptModelStyles
 	err         error
+}
+
+// Update implements tea.Model.
+func (c ConvertPromptModel) Update(tea.Msg) (tea.Model, tea.Cmd) {
+	panic("unimplemented")
 }
 
 type ConvertPromptModelStyles struct {
@@ -58,7 +64,7 @@ func DefaultStyles() *ConvertPromptModelStyles {
 	return s
 }
 
-func NewConvertPromptModel(questions []Question) *ConvertPromptModel {
+func NewConvertPromptModel(questions []prompt.Question) *ConvertPromptModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = spinnerStyle
@@ -89,64 +95,6 @@ func (c *ConvertPromptModel) Next() {
 	}
 }
 
-func (c ConvertPromptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	current := &c.questions[c.index]
-
-	switch msg := msg.(type) {
-
-	// on resize, update the width and height
-	// it triggers also in the first init
-	case tea.WindowSizeMsg:
-		c.width = msg.Width
-		c.height = msg.Height
-		c.quitting = false
-		return c, nil
-
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
-			c.quitting = true
-			return c, tea.Quit
-		case "enter":
-			if c.questions[c.index].genre == QuestionChoice {
-				current.SetAnswer(c.questions[c.index].GetChoices()[c.cursor])
-				c.Next()
-			} else {
-				current.SetAnswer(c.answerField.Value())
-				c.answerField.SetValue("")
-				c.Next()
-			}
-			return c, nil
-		case "up":
-			if c.questions[c.index].GetGenre() == QuestionChoice {
-				c.cursor--
-				if c.cursor < 0 {
-					c.cursor = len(c.questions[c.index].GetChoices()) - 1
-				}
-			}
-			return c, nil
-		case "down":
-			if c.questions[c.index].GetGenre() == QuestionChoice {
-				c.cursor++
-				if c.cursor >= len(c.questions[c.index].GetChoices()) {
-					c.cursor = 0
-				}
-			}
-			return c, nil
-		default:
-			var cmd tea.Cmd
-			c.answerField, cmd = c.answerField.Update(msg)
-			c.quitting = false
-			return c, cmd
-		}
-	default:
-		var cmd tea.Cmd
-		c.spinner, cmd = c.spinner.Update(msg)
-		return c, cmd
-	}
-
-}
-
 func (c ConvertPromptModel) View() string {
 	if c.err != nil {
 		return c.err.Error()
@@ -159,9 +107,9 @@ func (c ConvertPromptModel) View() string {
 		return str
 	}
 
-	if c.questions[c.index].genre == QuestionChoice {
-		str = fmt.Sprintf("%s\n", c.questions[c.index].question)
-		for i, choice := range c.questions[c.index].choices {
+	if c.questions[c.index].GetGenre() == prompt.QuestionChoice {
+		str = fmt.Sprintf("%s\n", c.questions[c.index].GetQuestion())
+		for i, choice := range c.questions[c.index].GetChoices() {
 			if i == c.cursor {
 				str += fmt.Sprintf("  %s %s\n", arrowStyle.Render("➜"), choice)
 			} else {
@@ -175,7 +123,7 @@ func (c ConvertPromptModel) View() string {
 			c.height,
 			lipgloss.Left,
 			lipgloss.Left,
-			lipgloss.JoinVertical(lipgloss.Left, c.questions[c.index].question, c.styles.InputField.Render(c.answerField.View())),
+			lipgloss.JoinVertical(lipgloss.Left, c.questions[c.index].GetQuestion(), c.styles.InputField.Render(c.answerField.View())),
 		)
 	}
 
