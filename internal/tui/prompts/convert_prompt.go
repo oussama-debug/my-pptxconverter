@@ -43,10 +43,17 @@ type ConvertPromptModelStyles struct {
 	InputField  lipgloss.Style
 }
 
+var (
+	arrowStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6"))
+	inputStyle   = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#01FAC6")).Width(80)
+	spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6"))
+	borderStyle  = lipgloss.Color("#01FAC6")
+)
+
 func DefaultStyles() *ConvertPromptModelStyles {
 	s := new(ConvertPromptModelStyles)
-	s.BorderColor = lipgloss.Color("#01FAC6")
-	s.InputField = lipgloss.NewStyle().BorderForeground(lipgloss.Color("#01FAC6")).Width(80)
+	s.BorderColor = borderStyle
+	s.InputField = inputStyle
 
 	return s
 }
@@ -54,7 +61,7 @@ func DefaultStyles() *ConvertPromptModelStyles {
 func NewConvertPromptModel(questions []Question) *ConvertPromptModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6"))
+	s.Style = spinnerStyle
 
 	answerField := textinput.New()
 	answerField.Placeholder = "Type your powerpoint file here"
@@ -81,16 +88,20 @@ func (c *ConvertPromptModel) Next() {
 		c.index = 0
 	}
 }
+
 func (c ConvertPromptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	current := &c.questions[c.index]
 
 	switch msg := msg.(type) {
 
+	// on resize, update the width and height
+	// it triggers also in the first init
 	case tea.WindowSizeMsg:
 		c.width = msg.Width
 		c.height = msg.Height
 		c.quitting = false
 		return c, nil
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
@@ -98,26 +109,26 @@ func (c ConvertPromptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return c, tea.Quit
 		case "enter":
 			if c.questions[c.index].genre == QuestionChoice {
-				current.answer = c.questions[c.index].choices[c.cursor]
+				current.SetAnswer(c.questions[c.index].GetChoices()[c.cursor])
 				c.Next()
 			} else {
-				current.answer = c.answerField.Value()
+				current.SetAnswer(c.answerField.Value())
 				c.answerField.SetValue("")
 				c.Next()
 			}
 			return c, nil
 		case "up":
-			if c.questions[c.index].genre == QuestionChoice {
+			if c.questions[c.index].GetGenre() == QuestionChoice {
 				c.cursor--
 				if c.cursor < 0 {
-					c.cursor = len(c.questions[c.index].choices) - 1
+					c.cursor = len(c.questions[c.index].GetChoices()) - 1
 				}
 			}
 			return c, nil
 		case "down":
-			if c.questions[c.index].genre == QuestionChoice {
+			if c.questions[c.index].GetGenre() == QuestionChoice {
 				c.cursor++
-				if c.cursor >= len(c.questions[c.index].choices) {
+				if c.cursor >= len(c.questions[c.index].GetChoices()) {
 					c.cursor = 0
 				}
 			}
@@ -152,7 +163,7 @@ func (c ConvertPromptModel) View() string {
 		str = fmt.Sprintf("%s\n", c.questions[c.index].question)
 		for i, choice := range c.questions[c.index].choices {
 			if i == c.cursor {
-				str += fmt.Sprintf("  %s %s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Render("➜"), choice)
+				str += fmt.Sprintf("  %s %s\n", arrowStyle.Render("➜"), choice)
 			} else {
 				str += fmt.Sprintf("    %s\n", choice)
 			}
